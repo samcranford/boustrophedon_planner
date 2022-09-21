@@ -6,9 +6,11 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <math.h>
 
 namespace boustrophedon_algorithms
 {
+
     struct Location
     {
         double y;
@@ -20,7 +22,7 @@ namespace boustrophedon_algorithms
         Split,
         Merge,
         Middle
-    }; // Point event for decomposing polgyons
+    }; // Point event for decomposing polygons
 
     struct Segment
     { // Segment structure used for polygon segmentation
@@ -41,6 +43,28 @@ namespace boustrophedon_algorithms
             return (a.x < b.x);
         }
     };
+
+    /**
+     * @brief conversion function from radians to degrees
+     *
+     * @param radian_value value to be converted in radians
+     * @return double degree output value
+     */
+    inline double radiansToDegrees(double radian_value)
+    {
+        return radian_value * 180 / M_PI;
+    }
+
+    /**
+     * @brief conversion function from degrees to radians
+     *
+     * @param degree_value value to be converted in degrees
+     * @return double radian output value
+     */
+    inline double degreesToRadians(double degree_value)
+    {
+        return degree_value * M_PI / 180;
+    }
 
     /**
      * @brief determine the intersected segments from a vertical sweep line during polygon decomposition
@@ -74,7 +98,7 @@ namespace boustrophedon_algorithms
      * @param vertex current vertex
      * @return Location next vertex
      */
-    Location findNextVertex(const std::vector<Location> points, Location vertex);
+    Location findNextVertex(std::vector<Location> points, Location vertex);
 
     /**
      * @brief finds the previous vertex in the polygon
@@ -83,7 +107,7 @@ namespace boustrophedon_algorithms
      * @param vertex current vertex
      * @return Location previous vertex
      */
-    Location findPreviousVertex(const std::vector<Location> points, Location vertex);
+    Location findPreviousVertex(std::vector<Location> points, Location vertex);
 
     /**
      * @brief replaces a segment with another segment for the cell containing it
@@ -129,6 +153,26 @@ namespace boustrophedon_algorithms
     void appendNewLocation(Location new_point, std::vector<Location> &points);
 
     /**
+     * @brief Rotates a point around an anchor point by an angle
+     *
+     * @param point to rotate
+     * @param anchor_point point to rotate around
+     * @param rotation_angle angle to rotate in degrees
+     * @return Location rotated point
+     */
+    Location rotatePoint(Location point, Location anchor_point, double rotation_angle);
+
+    /**
+     * @brief Rotates a vector of points around an anchor point by an angle
+     *
+     * @param points to rotate
+     * @param anchor_point point to rotate around
+     * @param rotation_angle angle to rotate in degrees
+     * @return std::vector<Location> rotated points
+     */
+    std::vector<Location> rotatePoints(std::vector<Location> points, Location anchor_point, double rotation_angle);
+
+    /**
      * @brief Boustrophedon Decomposition Planner is a trapezoidal based decomposition with middle events not decomposed. See link for description.
      * \warning Planner works only for counter clockwise polygon points
      * https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.69.2482&rep=rep1&type=pdf
@@ -137,8 +181,9 @@ namespace boustrophedon_algorithms
      * Survey sweep conducted vertically and therefore corn rows should also be make in the same direction.
      *
      * @param points polygon to be broken down
+     * @param waypoint_angle desired angle for waypoints to run at, CCW from positive x
      * @return a list sub polygons found
      */
-    std::vector<std::vector<Location>> boustrophedonDecompositionPlanner(const std::vector<Location> points);
+    std::vector<std::vector<Location>> boustrophedonDecompositionPlanner(const std::vector<Location> points, double waypoint_angle);
 
 } // namespace boustrophedon_algorithms

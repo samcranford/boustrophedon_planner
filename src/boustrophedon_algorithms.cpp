@@ -143,8 +143,9 @@ namespace boustrophedon_algorithms
         }
     }
 
-    Location findNextVertex(const std::vector<Location> points, Location vertex)
+    Location findNextVertex(std::vector<Location> points, Location vertex)
     {
+        points.pop_back();
         for (size_t i = 0; i < points.size(); i++)
         {
             if (points[i].x == vertex.x && points[i].y == vertex.y)
@@ -162,8 +163,9 @@ namespace boustrophedon_algorithms
         return points.front();
     }
 
-    Location findPreviousVertex(const std::vector<Location> points, Location vertex)
+    Location findPreviousVertex(std::vector<Location> points, Location vertex)
     {
+        points.pop_back();
         for (size_t i = 0; i < points.size(); i++)
         {
             if (points[i].x == vertex.x && points[i].y == vertex.y)
@@ -258,11 +260,38 @@ namespace boustrophedon_algorithms
         return;
     }
 
-    std::vector<std::vector<Location>> boustrophedonDecompositionPlanner(const std::vector<Location> points)
+    Location rotatePoint(Location point, Location anchor_point, double rotation_angle)
     {
-        double epsilon = .000001; // Cannot have critical vertices on same sweep line
-        std::vector<Location> ccw_points = points;
-        // Ensure no vertices have the same vertical sweep values, and remove the end point if polygon is closed
+        double radian_angle = degreesToRadians(rotation_angle);
+        double dx = point.x - anchor_point.x;
+        double dy = point.y - anchor_point.y;
+        Location rotated_point;
+        rotated_point.x = anchor_point.x + ((std::cos(radian_angle) * dx) - (std::sin(radian_angle) * dy));
+        rotated_point.y = anchor_point.y + ((std::sin(radian_angle) * dx) + (std::cos(radian_angle) * dy));
+        return rotated_point;
+    }
+
+    std::vector<Location> rotatePoints(std::vector<Location> points, Location anchor_point, double rotation_angle)
+    {
+        std::vector<Location> rotated_points;
+        for (size_t i = 0; i < points.size(); i++)
+        {
+            rotated_points.emplace_back(rotatePoint(points[i], anchor_point, rotation_angle));
+        }
+        return rotated_points;
+    }
+
+    std::vector<std::vector<Location>> boustrophedonDecompositionPlanner(const std::vector<Location> points, double waypoint_angle)
+
+    {
+        double epsilon = .000001;                    // Cannot have critical vertices on same sweep line
+        double rotation_angle = 90 - waypoint_angle; // Angle to make waypoint angle 90, for vertical sweep line
+        Location anchor_point{0, 0};                 // Anchor point not inside the polygon
+        std::vector<Location> ccw_points = rotatePoints(points, anchor_point, rotation_angle);
+
+        // Remove closure to check for points on same sweep line
+        // Ensure no vertices have the same vertical sweep values for lexigraphical sorting
+        // Re-close polygon after check
         if (ccw_points.front().x == ccw_points.back().x && ccw_points.front().y == ccw_points.back().y)
         {
             ccw_points.pop_back();
@@ -277,9 +306,14 @@ namespace boustrophedon_algorithms
                 }
             }
         }
-        // Sort the points in lexicographical order based on x, no x values are same
+
         std::vector<Location> sorted_points = ccw_points;
         std::sort(sorted_points.begin(), sorted_points.end(), CompareLocations());
+
+        if (ccw_points.front().x != ccw_points.back().x || ccw_points.front().y != ccw_points.back().y)
+        {
+            ccw_points.emplace_back(ccw_points.front());
+        }
 
         std::vector<Cell> closed_polygons;
         std::vector<Cell> open_polygons;
@@ -476,6 +510,11 @@ namespace boustrophedon_algorithms
                 }
             }
             closed_polygons_vector.emplace_back(sub_polygon);
+        }
+        // Rotate the polygons back to the original orientation
+        for (size_t i = 0; i < closed_polygons_vector.size(); i++)
+        {
+            closed_polygons_vector[i] = rotatePoints(closed_polygons_vector[i], anchor_point, -rotation_angle);
         }
         return closed_polygons_vector;
     }
