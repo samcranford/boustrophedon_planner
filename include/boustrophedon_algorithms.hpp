@@ -13,8 +13,8 @@ namespace boustrophedon_algorithms
 
     struct Location
     {
-        double y;
         double x;
+        double y;
     };
 
     enum PointEvent
@@ -23,6 +23,8 @@ namespace boustrophedon_algorithms
         Merge,
         Middle
     }; // Point event for decomposing polygons
+
+    enum class Orient { Collinear, Clockwise, Counterclockwise };  // Line, point orientation 
 
     struct Segment
     { // Segment structure used for polygon segmentation
@@ -171,6 +173,16 @@ namespace boustrophedon_algorithms
      * @return std::vector<Location> rotated points
      */
     std::vector<Location> rotatePoints(std::vector<Location> points, Location anchor_point, double rotation_angle);
+
+    /**
+     * @brief determines orientation of a line and point
+     *
+     * @param p start location
+     * @param q middle location
+     * @param r end location
+     * @return Orient orientation as Collinear, Clockwise, or Counterclockwise
+     */
+    Orient orientation(Location p, Location q, Location r);
 
     /**
      * @brief Boustrophedon Decomposition Planner is a trapezoidal based decomposition with middle events not decomposed. See link for description.

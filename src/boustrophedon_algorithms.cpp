@@ -281,6 +281,14 @@ namespace boustrophedon_algorithms
         return rotated_points;
     }
 
+    Orient orientation(Location p, Location q, Location r) {
+    double val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+    if (val == 0) {
+        return Orient::Collinear;
+    }
+    return (val > 0) ? Orient::Clockwise : Orient::Counterclockwise;
+}
+
     std::vector<std::vector<Location>> boustrophedonDecompositionPlanner(const std::vector<Location> points, double waypoint_angle)
 
     {
@@ -327,11 +335,6 @@ namespace boustrophedon_algorithms
             Location prev_ccw_vertex = findPreviousVertex(ccw_points, vertex);
             Location upper_edge_vertex = next_ccw_vertex;
             Location lower_edge_vertex = prev_ccw_vertex;
-            if (next_ccw_vertex.y < prev_ccw_vertex.y)
-            {
-                upper_edge_vertex = prev_ccw_vertex;
-                lower_edge_vertex = next_ccw_vertex;
-            }
             Segment e_upper;
             Segment e_lower;
             PointEvent event = spliceEvent(vertex, upper_edge_vertex, lower_edge_vertex);
@@ -339,6 +342,10 @@ namespace boustrophedon_algorithms
             {
             case PointEvent::Merge:
             {
+                if(orientation(lower_edge_vertex, vertex, upper_edge_vertex) != Orient::Counterclockwise){
+                    upper_edge_vertex = prev_ccw_vertex;
+                    lower_edge_vertex = next_ccw_vertex;
+                }
                 e_upper.start = vertex;
                 e_upper.end = upper_edge_vertex;
                 e_lower.start = lower_edge_vertex;
@@ -403,6 +410,10 @@ namespace boustrophedon_algorithms
             break;
             case PointEvent::Split:
             {
+                if(orientation(lower_edge_vertex, vertex, upper_edge_vertex) != Orient::Clockwise){
+                    upper_edge_vertex = prev_ccw_vertex;
+                    lower_edge_vertex = next_ccw_vertex;
+                }
                 e_upper.start = upper_edge_vertex;
                 e_upper.end = vertex;
                 e_lower.start = vertex;
